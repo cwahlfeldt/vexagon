@@ -1,0 +1,9 @@
+extends Enemy
+
+func get_threat_tiles() -> Array[Vector3i]:
+	# Diagonal lines in all 6 directions, range 2-5
+	var tiles: Array[Vector3i] = []
+	for dir in HexGrid.DIRS:
+		for dist in range(2, 6):
+			tiles.append(coord + dir * dist)
+	return tiles

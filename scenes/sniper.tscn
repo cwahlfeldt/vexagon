@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://b8pjk7m3yt5e1"]
+
+[ext_resource type="Script" path="res://scripts/sniper.gd" id="1_sniper"]
+[ext_resource type="PackedScene" path="res://assets/models/characters/Skeleton_Rogue/Skeleton_Rogue.glb" id="2_model"]
+
+[node name="Sniper" type="Node3D"]
+script = ExtResource("1_sniper")
+max_hp = 1
+damage = 1
+axis = 0
+
+[node name="Model" parent="." instance=ExtResource("2_model")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)

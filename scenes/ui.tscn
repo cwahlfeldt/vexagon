@@ -1,0 +1,35 @@
+[gd_scene load_steps=2 format=3 uid="uid://d4k9n7m2q5vu7"]
+
+[ext_resource type="Script" path="res://scripts/ui.gd" id="1_ui"]
+
+[node name="UI" type="CanvasLayer"]
+script = ExtResource("1_ui")
+
+[node name="HealthLabel" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 200.0
+offset_bottom = 60.0
+theme_override_font_sizes/font_size = 24
+text = "HP: 3/3"
+
+[node name="DashButton" type="Button" parent="."]
+offset_left = 20.0
+offset_top = 80.0
+offset_right = 150.0
+offset_bottom = 130.0
+text = "DASH (D)"
+
+[node name="BlockButton" type="Button" parent="."]
+offset_left = 20.0
+offset_top = 140.0
+offset_right = 150.0
+offset_bottom = 190.0
+text = "BLOCK (B)"
+
+[node name="RewindButton" type="Button" parent="."]
+offset_left = 20.0
+offset_top = 200.0
+offset_right = 150.0
+offset_bottom = 250.0
+text = "REWIND (R)"
