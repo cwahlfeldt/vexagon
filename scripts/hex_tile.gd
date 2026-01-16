@@ -30,7 +30,7 @@ func _on_click(_cam, event, _pos, _normal, _idx):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		if Game.is_player_turn:
 			Game.player.try_move_to(coord)
-			print("Clicked on %s" % self)
+			print("Clicked on %s" % coord)
 
 func set_highlight(on: bool, color := Color.WHITE):
 	highlighted = on
