@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://c3k8m5n7p2vu8"]
+[gd_scene load_steps=8 format=3 uid="uid://c3k8m5n7p2vu8"]
 
 [ext_resource type="Script" uid="uid://ccarjh2gsltft" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" uid="uid://c8dvnp5q6uo4m" path="res://scenes/hex_tile.tscn" id="2_hex_tile"]
@@ -6,6 +6,8 @@
 [ext_resource type="PackedScene" uid="uid://c2jrk5m8xtw7e" path="res://scenes/grunt.tscn" id="4_grunt"]
 [ext_resource type="PackedScene" uid="uid://d1fyh5m8yw2la" path="res://scenes/wizard.tscn" id="5_wizard"]
 [ext_resource type="PackedScene" uid="uid://d4lan7m2q5vu7" path="res://scenes/ui.tscn" id="6_ui"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_tefeu"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
@@ -38,3 +40,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, 0)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3)
 
 [node name="UI" parent="." instance=ExtResource("6_ui")]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(-330.026, 0, 0, 0, 1, 0, 0, 0, -365.69235, 0, -2, 0)
+mesh = SubResource("PlaneMesh_tefeu")

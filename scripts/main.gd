@@ -23,19 +23,23 @@ func generate_grid():
 
 func position_units():
 	var player = $Units/Player
-	player.coord = Vector3i.ZERO
-	player.position = HexGrid.to_world(Vector3i.ZERO)
+	player.coord = Vector3i(0, 5, -5)
+	player.position = HexGrid.to_world(Vector3i(0, 5, -5))
 
 	# Position enemies randomly
 	var spawnable = []
 	for tile in get_tree().get_nodes_in_group("tiles"):
-		if tile.walkable and HexGrid.distance(tile.coord, Vector3i.ZERO) > 2:
+		if tile.walkable and HexGrid.distance(tile.coord, player.coord) > 2:
 			spawnable.append(tile.coord)
 	spawnable.shuffle()
 
-	var i := 0
+	var occupied_tiles = [player.coord]  # Track occupied positions
+
 	for enemy in get_tree().get_nodes_in_group("enemies"):
-		if i < spawnable.size():
-			enemy.coord = spawnable[i]
-			enemy.position = HexGrid.to_world(spawnable[i])
-			i += 1
+		# Find first unoccupied spawnable position
+		for spawn_coord in spawnable:
+			if spawn_coord not in occupied_tiles:
+				enemy.coord = spawn_coord
+				enemy.position = HexGrid.to_world(spawn_coord)
+				occupied_tiles.append(spawn_coord)
+				break
