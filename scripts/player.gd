@@ -71,7 +71,6 @@ func do_move(target: Vector3i):
 
 	# Track which MELEE enemies player was already adjacent to
 	# These enemies don't get reactive attacks (Hoplite rule)
-	# BUT player will counter-attack them if still adjacent after move
 	var melee_enemies_already_adjacent = []
 
 	for enemy in Game.enemies:
@@ -81,11 +80,9 @@ func do_move(target: Vector3i):
 		# Check if enemy is melee (min attack range == 1 means melee)
 		var is_melee = enemy.get_min_attack_range() == 1
 
-		if is_melee:
-			# Check if player was already in this melee enemy's threat zone
-			if enemy.dominates(old_coord):
-				print(enemy.name, " was already adjacent (melee) - will be counter-attacked, not reactive attack")
-				melee_enemies_already_adjacent.append(enemy)
+		if is_melee and enemy.dominates(old_coord):
+			print(enemy.name, " was already adjacent (melee) - no reactive attack")
+			melee_enemies_already_adjacent.append(enemy)
 
 	# Execute movement animation
 	coord = target
@@ -113,16 +110,16 @@ func do_move(target: Vector3i):
 				print("Player died!")
 				return
 
-	# PHASE 2: PLAYER COUNTER-ATTACKS
-	# Player attacks melee enemies they were already adjacent to (Hoplite-style)
-	print("\n--- PLAYER COUNTER-ATTACKS ---")
-	for enemy in melee_enemies_already_adjacent:
+	# PHASE 2: PLAYER ATTACKS
+	# Player attacks ALL adjacent enemies after moving
+	print("\n--- PLAYER ATTACKS ---")
+	for enemy in Game.enemies:
 		if not is_instance_valid(enemy):
 			continue
 
-		# Check if enemy is still in player's attack range (adjacent)
+		# Attack any enemy adjacent to player's new position
 		if HexGrid.distance(target, enemy.coord) == 1:
-			print("Player counter-attacks ", enemy.name, "!")
+			print("Player attacks ", enemy.name, "!")
 			await attack(enemy)
 
 func do_dash(target: Vector3i):

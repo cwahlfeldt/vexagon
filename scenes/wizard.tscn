@@ -5,7 +5,7 @@
 
 [node name="Wizard" type="Node3D"]
 script = ExtResource("1_wizard")
-max_hp = 2
+max_hp = 1
 damage = 1
 
 [node name="Model" parent="." instance=ExtResource("2_model")]

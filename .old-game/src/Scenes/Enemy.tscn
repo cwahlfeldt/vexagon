@@ -1,0 +1,24 @@
+[gd_scene load_steps=5 format=3 uid="uid://6yv5bvmyqeli"]
+
+[ext_resource type="PackedScene" uid="uid://sn2hkfnj1ftd" path="res://assets/models/characters/Skeleton_Warrior/Skeleton_Warrior.glb" id="2_1706r"]
+[ext_resource type="AnimationLibrary" uid="uid://ccp41w2sxrumd" path="res://assets/models/animations/Character.res" id="2_g1uh0"]
+[ext_resource type="AnimationLibrary" uid="uid://4x2bd5fq0rpr" path="res://assets/models/animations/Movement.res" id="3_5dq0m"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wsnrg"]
+height = 1.49524
+
+[node name="Enemy" type="Area3D" groups=["Enemy"]]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.800174, 0)
+shape = SubResource("CapsuleShape3D_wsnrg")
+
+[node name="Skeleton_Warrior" parent="." instance=ExtResource("2_1706r")]
+transform = Transform3D(-0.615, 0, -5.3765007e-08, 0, 0.615, 0, 5.3765007e-08, 0, -0.615, 0, 0, 0)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Skeleton_Warrior"]
+libraries = {
+&"Character": ExtResource("2_g1uh0"),
+&"Movement": ExtResource("3_5dq0m")
+}
