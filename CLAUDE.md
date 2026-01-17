@@ -9,6 +9,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Hoplite-style engagement: enemies attack when player enters their threat zones
 - Player abilities: Dash (move 2 tiles, 4-turn cooldown), Block (negate one hit, 3-turn cooldown)
 - Rewind system to undo mistakes (preserves last 50 game states)
+- 8-level campaign with progressive difficulty
+- Victory/defeat conditions with UI feedback
 
 ## Running the Game
 
@@ -24,19 +26,25 @@ There is no separate build system - Godot handles compilation internally.
 
 ### Autoload Singletons (Global State)
 
-Two autoload scripts manage core systems (configured in [project.godot:18-21](project.godot#L18-L21)):
+Three autoload scripts manage core systems (configured in [project.godot:18-22](project.godot#L18-L22)):
 
 1. **Game** ([scripts/game.gd](scripts/game.gd)) - Central game controller
    - Manages turn flow, player/enemy references, game state
    - Handles rewind system via state snapshots
    - Coordinates tile blocking and enemy lookups
-   - Key methods: `start_game()`, `end_player_turn()`, `rewind()`
+   - Victory/defeat detection and signals
+   - Key methods: `start_game()`, `end_player_turn()`, `rewind()`, `trigger_defeat()`, `check_victory()`
 
 2. **HexGrid** ([scripts/hex_grid.gd](scripts/hex_grid.gd)) - Hex math utilities
    - Converts hex coordinates (Vector3i) to world positions (Vector3)
    - Provides hex algorithms: `neighbors()`, `distance()`, `in_range()`, `line()`
    - Uses cube coordinates (x+y+z=0 invariant)
    - Hex size constant: `SIZE = 1.05`
+
+3. **LevelManager** ([scripts/level_manager.gd](scripts/level_manager.gd)) - Level progression
+   - Defines 8 levels with increasing difficulty
+   - Manages current level index and progression
+   - Key methods: `get_current_level()`, `advance_level()`, `reset_to_level()`
 
 ### Scene Structure
 
@@ -62,11 +70,23 @@ Main (Node3D)
 ### Enemy Threat System
 
 Each enemy type overrides `get_threat_tiles()` to define its attack pattern:
-- **Grunt** ([scripts/enemy.gd](scripts/enemy.gd)): Adjacent tiles (6 neighbors)
-- **Wizard** ([scripts/wizard.gd](scripts/wizard.gd)): Diagonal lines in 6 directions, range 2-5
-- **Sniper** ([scripts/sniper.gd](scripts/sniper.gd)): Axis-aligned (Q/R/S), range 2-5
+- **Grunt** ([scripts/enemy.gd](scripts/enemy.gd)): Adjacent tiles (6 neighbors), 1 HP, 1 damage
+- **Wizard** ([scripts/wizard.gd](scripts/wizard.gd)): Diagonal lines in 6 directions, range 2-5, 2 HP, 1 damage
+- **Sniper** ([scripts/sniper.gd](scripts/sniper.gd)): Axis-aligned (Q/R/S), range 2-5, 1 HP, 2 damage
 
 The `dominates(coord)` method checks if a coordinate is in the enemy's threat zone.
+
+### Level System
+
+Levels are configured via [LevelConfig](scripts/level_config.gd) resources with:
+- Map size, blocked tile chance
+- Player starting HP
+- Enemy counts per type (grunt, wizard, sniper)
+- Enemy stat bonuses (HP, damage)
+- Spawn distance rules
+- Rewind availability (disabled in final level)
+
+The 8 levels progress from tutorial (2 grunts) to final challenge (mixed enemies, no rewind).
 
 ### Rewind Mechanics
 
@@ -110,6 +130,8 @@ Simple greedy pathfinding: each enemy moves to adjacent tile that minimizes dist
 
 - `scenes/` - All .tscn files (main, ui, hex_tile, player, enemies)
 - `scripts/` - All .gd files (paired with scenes, plus autoloads)
+  - `level_config.gd` - LevelConfig resource class
+  - `level_manager.gd` - Level progression autoload
 - `assets/` - Game assets
 - `.godot/` - Godot engine cache (auto-generated, don't modify)
 
@@ -120,4 +142,6 @@ Simple greedy pathfinding: each enemy moves to adjacent tile that minimizes dist
 3. **Turn blocking**: Player input is ignored when `Game.is_player_turn` is false
 4. **Instance validity**: Always check `is_instance_valid(enemy)` before accessing enemy references (they may be freed)
 5. **Dash mode persistence**: Dash mode is cleared at start of each turn and on rewind
+6. **Game state reset**: Call `Game.reset_state()` before setting up a new level to clear history and references
+7. **Dynamic unit spawning**: Units are spawned dynamically by main.gd based on LevelConfig - don't add units directly to the scene
 

@@ -3,6 +3,8 @@ extends Node
 signal turn_started(unit)
 signal player_died
 signal enemy_died(enemy)
+signal game_won
+signal game_lost
 
 var player: Node3D
 var enemies: Array[Node3D] = []
@@ -12,8 +14,24 @@ var current_unit = null
 var is_player_turn := true
 var history: Array[Dictionary] = []  # For rewind
 
+# Game state
+var game_over := false
+var rewind_cooldown := 0
+const REWIND_COOLDOWN_TURNS := 0  # Set to 3 if you want rewind cooldown like old game
+
 func _ready():
 	pass
+
+func reset_state():
+	# Reset all game state for a new level
+	game_over = false
+	is_player_turn = true
+	rewind_cooldown = 0
+	history.clear()
+	enemies.clear()
+	tiles.clear()
+	player = null
+	current_unit = null
 
 # Called after scene loads
 func start_game():
@@ -30,15 +48,53 @@ func start_game():
 	start_player_turn()
 
 func start_player_turn():
+	if game_over:
+		return
+
 	is_player_turn = true
+
+	# Tick rewind cooldown
+	if rewind_cooldown > 0:
+		rewind_cooldown -= 1
+
 	player.start_turn()
 	turn_started.emit(player)
 
 func end_player_turn():
+	if game_over:
+		return
+
 	is_player_turn = false
+
+	# Check for victory (all enemies dead)
+	if check_victory():
+		return
+
 	await do_enemy_turns()
 	save_state()
 	start_player_turn()
+
+func check_victory() -> bool:
+	# Count valid enemies
+	var alive_count := 0
+	for e in enemies:
+		if is_instance_valid(e):
+			alive_count += 1
+
+	if alive_count == 0:
+		game_over = true
+		game_won.emit()
+		print("=== VICTORY! All enemies defeated! ===")
+		return true
+	return false
+
+func trigger_defeat():
+	if game_over:
+		return
+	game_over = true
+	game_lost.emit()
+	print("=== DEFEAT! Player has fallen! ===")
+	player_died.emit()
 
 func do_enemy_turns():
 	for enemy in enemies:
@@ -94,11 +150,19 @@ func save_state():
 	if history.size() > 50:
 		history.pop_front()
 
-func rewind():
+func can_rewind() -> bool:
 	if history.size() < 2:
+		return false
+	if rewind_cooldown > 0:
+		return false
+	return true
+
+func rewind():
+	if not can_rewind():
 		return
-	if not is_instance_valid(player):
-		return
+
+	# Reset game over state (allows rewinding from defeat)
+	game_over = false
 
 	history.pop_back()  # Remove current
 	var state = history.back()
@@ -139,5 +203,9 @@ func rewind():
 		enemy.hp = e_data.hp
 		enemy.position = HexGrid.to_world(e_data.coord)
 		enemies.append(enemy)
+
+	# Start rewind cooldown if configured
+	if REWIND_COOLDOWN_TURNS > 0:
+		rewind_cooldown = REWIND_COOLDOWN_TURNS
 
 	start_player_turn()

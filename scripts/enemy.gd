@@ -58,64 +58,148 @@ func dominates(target_coord: Vector3i) -> bool:
 		print(name, " dominates ", target_coord, " (has ", threat_tiles.size(), " threat tiles)")
 	return result
 
+# Override in subclasses for ranged enemies (default is melee: min=1, max=1)
+func get_min_attack_range() -> int:
+	return 1
+
+func get_max_attack_range() -> int:
+	return 1
+
 func take_turn():
 	var player = Game.player
-	var dist = HexGrid.distance(coord, player.coord)
-
-	print(name, " taking turn. Distance to player: ", dist, ". Dominates player: ", dominates(player.coord))
-
-	if dominates(player.coord):
-		# Player in range - wait (Hoplite style, don't move)
-		print(name, " is dominating player, not moving")
+	if not is_instance_valid(player):
 		return
 
-	# Always try to move toward player if not dominating them
-	print(name, " moving toward player")
-	await move_toward_tile(player.coord)
+	var dist = HexGrid.distance(coord, player.coord)
+	var player_in_threat = dominates(player.coord)
 
-func move_toward_tile(target: Vector3i):
-	var best_tile = coord
-	var best_dist = HexGrid.distance(coord, target)
-	var walkable_neighbors = []
+	print(name, " taking turn. Distance to player: ", dist, ". In threat zone: ", player_in_threat)
 
-	# Find the best neighbor that gets us closer, and track all walkable neighbors
+	# HOPLITE-STYLE AI: Enemies NEVER attack on their turn
+	# They only move to position themselves, or pass if player is in threat zone
+
+	if player_in_threat:
+		# Player already in threat zone - stay put and wait for player to move into us
+		print(name, " has player in threat zone, passing turn")
+		return
+
+	# Need to move - find best position
+	await find_and_move_to_best_position(player.coord)
+
+func find_and_move_to_best_position(player_coord: Vector3i):
+	# Get all walkable neighbors
+	var candidates = []
 	for neighbor in HexGrid.neighbors(coord):
-		if Game.is_tile_blocked(neighbor):
-			continue
-		walkable_neighbors.append(neighbor)
-		var d = HexGrid.distance(neighbor, target)
-		if d < best_dist:
-			best_dist = d
-			best_tile = neighbor
+		if not Game.is_tile_blocked(neighbor):
+			candidates.append(neighbor)
 
-	# If we found a tile that gets us closer, use it
+	if candidates.is_empty():
+		print(name, " has no valid moves (surrounded)")
+		return
+
+	# Score each candidate position
+	var best_tile = coord
+	var best_score = -INF
+
+	var min_range = get_min_attack_range()
+	var max_range = get_max_attack_range()
+	var is_melee = (min_range == 1)
+
+	for candidate in candidates:
+		var score = score_position(candidate, player_coord, min_range, max_range, is_melee)
+		if score > best_score:
+			best_score = score
+			best_tile = candidate
+
+	# Only move if we found a better position
 	if best_tile != coord:
-		print(name, " moving from ", coord, " to ", best_tile, " (getting closer)")
-		coord = best_tile
-		var tween = create_tween()
-		tween.tween_property(self, "position", HexGrid.to_world(best_tile), 0.25)
-		await tween.finished
-	# Otherwise, if we have any walkable neighbors, pick one (to avoid getting stuck)
-	elif walkable_neighbors.size() > 0:
-		best_tile = walkable_neighbors[0]  # Just pick the first walkable tile
-		print(name, " moving from ", coord, " to ", best_tile, " (no closer tile, moving anyway)")
-		coord = best_tile
-		var tween = create_tween()
-		tween.tween_property(self, "position", HexGrid.to_world(best_tile), 0.25)
-		await tween.finished
+		await move_to(best_tile)
 	else:
-		print(name, " could not find any walkable tile (completely surrounded)")
+		print(name, " staying put (no better position found)")
+
+func score_position(pos: Vector3i, player_coord: Vector3i, min_range: int, _max_range: int, is_melee: bool) -> float:
+	var dist = HexGrid.distance(pos, player_coord)
+
+	# Check if player would be in threat zone from this position
+	var would_threaten = would_dominate_from(pos, player_coord)
+
+	if is_melee:
+		# MELEE AI (Grunt): Get as close as possible
+		# Strong preference for positions that threaten the player
+		if would_threaten:
+			return 1000.0 - dist  # Threaten + minimize distance
+		else:
+			return -dist  # Just minimize distance
+	else:
+		# RANGED AI (Wizard/Sniper): Maintain optimal range (around 3)
+		# Strong preference for positions that threaten the player
+		var ideal_dist = 3.0
+		var dist_penalty = abs(dist - ideal_dist)
+
+		if would_threaten:
+			return 1000.0 - dist_penalty  # Threaten + stay at ideal range
+		elif dist < min_range:
+			return -500.0 + dist  # Too close, need to back away
+		else:
+			return -dist_penalty  # Move toward ideal range
+
+func would_dominate_from(from_pos: Vector3i, target_coord: Vector3i) -> bool:
+	# Check if we would threaten target_coord if we were at from_pos
+	# This needs to calculate threat tiles as if we were at from_pos
+	var old_coord = coord
+	coord = from_pos
+	var result = dominates(target_coord)
+	coord = old_coord
+	return result
+
+func move_to(target: Vector3i):
+	print(name, " moving from ", coord, " to ", target)
+	coord = target
+	var tween = create_tween()
+	tween.tween_property(self, "position", HexGrid.to_world(target), 0.25)
+	await tween.finished
 
 func attack(target):
+	# Lunge animation toward target and back
+	var start_pos = position
 	var dir = (target.position - position).normalized()
 	var tween = create_tween()
-	tween.tween_property(self, "position", position + dir * 0.3, 0.1)
-	tween.tween_property(self, "position", position, 0.1)
+	tween.tween_property(self, "position", start_pos + dir * 0.3, 0.1)
+	tween.tween_property(self, "position", start_pos, 0.1)
 	await tween.finished
 
 	target.take_damage(damage)
 
 func take_damage(amount: int):
 	hp -= amount
+	print(name, " took ", amount, " damage! HP: ", hp)
+
+	# Flash red on hit
+	flash_damage()
+
 	if hp <= 0:
+		await play_death_animation()
 		Game.remove_enemy(self)
+
+func flash_damage():
+	# Brief red flash on damage
+	var model = get_node_or_null("Model")
+	if model:
+		# Find all mesh instances and flash them
+		for child in model.get_children():
+			if child is MeshInstance3D and child.get_surface_override_material_count() > 0:
+				# Store original and apply flash (simplified approach)
+				pass
+	# Visual feedback via scale pulse
+	var tween = create_tween()
+	tween.tween_property(self, "scale", Vector3(1.2, 0.8, 1.2), 0.05)
+	tween.tween_property(self, "scale", Vector3.ONE, 0.1)
+
+func play_death_animation():
+	print(name, " defeated!")
+	# Death animation: shrink and fade
+	var tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(self, "scale", Vector3(0.1, 0.1, 0.1), 0.3)
+	tween.tween_property(self, "position:y", position.y - 0.5, 0.3)
+	await tween.finished

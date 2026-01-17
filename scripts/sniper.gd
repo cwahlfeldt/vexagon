@@ -17,3 +17,9 @@ func get_threat_tiles() -> Array[Vector3i]:
 		tiles.append(coord + dir2 * dist)
 
 	return tiles
+
+func get_min_attack_range() -> int:
+	return 2  # Can't attack adjacent tiles
+
+func get_max_attack_range() -> int:
+	return 5

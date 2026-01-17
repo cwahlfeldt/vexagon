@@ -1,14 +1,17 @@
 extends Enemy
 
 func get_threat_tiles() -> Array[Vector3i]:
-	# Diagonal lines in all 6 directions, range 2-5
+	# Shoots in 6 hex directions (straight lines), range 2-5
+	# Cannot shoot adjacent tiles (range starts at 2)
 	var tiles: Array[Vector3i] = []
 	for dir in HexGrid.DIRS:
 		for dist in range(2, 6):
 			tiles.append(coord + dir * dist)
 
-	# Debug output
-	if tiles.size() > 0:
-		print("Wizard at ", coord, " has threat tiles: ", tiles)
-
 	return tiles
+
+func get_min_attack_range() -> int:
+	return 2  # Can't attack adjacent tiles
+
+func get_max_attack_range() -> int:
+	return 5

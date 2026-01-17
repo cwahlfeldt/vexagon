@@ -6,7 +6,7 @@
 [node name="Sniper" type="Node3D"]
 script = ExtResource("1_sniper")
 max_hp = 1
-damage = 1
+damage = 2
 axis = 0
 
 [node name="Model" parent="." instance=ExtResource("2_model")]

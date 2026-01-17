@@ -67,82 +67,97 @@ func try_move_to(target: Vector3i):
 
 func do_move(target: Vector3i):
 	var old_coord = coord
-	print("\n=== PLAYER MOVING TO ", target, " ===")
+	print("\n=== PLAYER MOVING FROM ", old_coord, " TO ", target, " ===")
 
-	# HOPLITE TILE OWNERSHIP RULES:
-	# - Enemies "own" tiles in their threat zones
-	# - Player "owns" tiles adjacent (distance=1) to them after moving
-	# - If ONLY enemies own the tile → enemies attack, player doesn't
-	# - If ONLY player owns the tile → player attacks, enemies don't
-	# - If BOTH own the tile → contested, both attack
-
-	var enemies_that_own_tile = []
-	var enemies_adjacent_to_tile = []
+	# Track which MELEE enemies player was already adjacent to
+	# These enemies don't get reactive attacks (Hoplite rule)
+	# BUT player will counter-attack them if still adjacent after move
+	var melee_enemies_already_adjacent = []
 
 	for enemy in Game.enemies:
 		if not is_instance_valid(enemy):
 			continue
 
-		# Does this enemy have the target tile in their threat zone?
-		var threat_tiles = enemy.get_threat_tiles()
-		if target in threat_tiles:
-			print(enemy.name, " owns tile ", target, " (in threat zone)")
-			enemies_that_own_tile.append(enemy)
+		# Check if enemy is melee (min attack range == 1 means melee)
+		var is_melee = enemy.get_min_attack_range() == 1
 
-		# Is this enemy adjacent to the target tile?
-		var distance_to_tile = HexGrid.distance(enemy.coord, target)
-		if distance_to_tile == 1:
-			print(enemy.name, " is adjacent to tile ", target)
-			enemies_adjacent_to_tile.append(enemy)
+		if is_melee:
+			# Check if player was already in this melee enemy's threat zone
+			if enemy.dominates(old_coord):
+				print(enemy.name, " was already adjacent (melee) - will be counter-attacked, not reactive attack")
+				melee_enemies_already_adjacent.append(enemy)
 
-	# Player owns tiles adjacent to enemies (after moving there)
-	var player_owns_tile = enemies_adjacent_to_tile.size() > 0
-	var enemies_own_tile = enemies_that_own_tile.size() > 0
-
-	print("\nTile ownership:")
-	print("  - Player owns: ", player_owns_tile, " (", enemies_adjacent_to_tile.size(), " adjacent enemies)")
-	print("  - Enemies own: ", enemies_own_tile, " (", enemies_that_own_tile.size(), " enemies)")
-
-	# Move to the tile
+	# Execute movement animation
 	coord = target
 	var tween = create_tween()
 	tween.tween_property(self, "position", HexGrid.to_world(target), 0.25)
 	await tween.finished
 
-	# COMBAT RESOLUTION based on tile ownership
-	if enemies_own_tile:
-		# Enemies own the tile - they attack
-		print("\n--- ENEMIES ATTACK (they own the tile) ---")
-		for enemy in enemies_that_own_tile:
-			if is_instance_valid(enemy):
-				print(enemy.name, " attacking player!")
-				await enemy.attack(self)
-				if hp <= 0:
-					print("Player died!")
-					return
+	# PHASE 1: ENEMY REACTIVE ATTACKS
+	# Enemies attack when player enters/remains in their range
+	# Exception: Melee enemies player was already adjacent to don't get reactive attacks
+	print("\n--- ENEMY REACTIVE ATTACKS ---")
+	for enemy in Game.enemies:
+		if not is_instance_valid(enemy):
+			continue
 
-	if player_owns_tile:
-		# Player owns the tile - player attacks
-		print("\n--- PLAYER ATTACKS (player owns the tile) ---")
-		for enemy in enemies_adjacent_to_tile:
-			if is_instance_valid(enemy):
-				print("Player attacking ", enemy.name, "!")
-				await attack(enemy)
+		# Skip melee enemies we were already adjacent to
+		if enemy in melee_enemies_already_adjacent:
+			continue
+
+		# Check if player is now in this enemy's threat range
+		if enemy.dominates(target):
+			print(enemy.name, " reactive attack (player entered/in threat zone)!")
+			await enemy.attack(self)
+			if hp <= 0:
+				print("Player died!")
+				return
+
+	# PHASE 2: PLAYER COUNTER-ATTACKS
+	# Player attacks melee enemies they were already adjacent to (Hoplite-style)
+	print("\n--- PLAYER COUNTER-ATTACKS ---")
+	for enemy in melee_enemies_already_adjacent:
+		if not is_instance_valid(enemy):
+			continue
+
+		# Check if enemy is still in player's attack range (adjacent)
+		if HexGrid.distance(target, enemy.coord) == 1:
+			print("Player counter-attacks ", enemy.name, "!")
+			await attack(enemy)
 
 func do_dash(target: Vector3i):
+	var old_coord = coord
+	print("\n=== PLAYER DASHING FROM ", old_coord, " TO ", target, " ===")
+
 	dash_mode = false
 	dash_cooldown = 4
+
+	# Fast dash animation
 	coord = target
 	var tween = create_tween()
 	tween.tween_property(self, "position", HexGrid.to_world(target), 0.15)
 	await tween.finished
 
+	# DASH RULE: No enemy reactive attacks during dash!
+	# But player can attack enemies in range after landing
+
+	print("\n--- PLAYER ATTACKS AFTER DASH ---")
+	for enemy in Game.enemies:
+		if not is_instance_valid(enemy):
+			continue
+
+		# Attack all adjacent enemies after dash
+		if HexGrid.distance(target, enemy.coord) == 1:
+			print("Player attacks ", enemy.name, " after dash!")
+			await attack(enemy)
+
 func attack(target):
-	# Lunge animation
+	# Lunge animation toward target and back
+	var start_pos = position
 	var dir = (target.position - position).normalized()
 	var tween = create_tween()
-	tween.tween_property(self, "position", position + dir * 0.3, 0.1)
-	tween.tween_property(self, "position", position, 0.1)
+	tween.tween_property(self, "position", start_pos + dir * 0.3, 0.1)
+	tween.tween_property(self, "position", start_pos, 0.1)
 	await tween.finished
 
 	target.take_damage(damage)
@@ -151,11 +166,14 @@ func take_damage(amount: int):
 	if block_active:
 		block_active = false
 		block_cooldown = 3
+		print("Block absorbed damage!")
 		return
 
 	hp -= amount
+	print("Player took ", amount, " damage! HP: ", hp, "/", max_hp)
 	if hp <= 0:
 		died.emit()
+		Game.trigger_defeat()
 
 func show_move_range():
 	hide_move_range()  # Clear any existing highlights first
