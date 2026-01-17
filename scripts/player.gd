@@ -67,33 +67,67 @@ func try_move_to(target: Vector3i):
 
 func do_move(target: Vector3i):
 	var old_coord = coord
+	print("\n=== PLAYER MOVING TO ", target, " ===")
 
-	# Check enemies we're entering range of (they attack us)
+	# HOPLITE TILE OWNERSHIP RULES:
+	# - Enemies "own" tiles in their threat zones
+	# - Player "owns" tiles adjacent (distance=1) to them after moving
+	# - If ONLY enemies own the tile → enemies attack, player doesn't
+	# - If ONLY player owns the tile → player attacks, enemies don't
+	# - If BOTH own the tile → contested, both attack
+
+	var enemies_that_own_tile = []
+	var enemies_adjacent_to_tile = []
+
 	for enemy in Game.enemies:
 		if not is_instance_valid(enemy):
 			continue
-		var dominated_before = enemy.dominates(old_coord)
-		var dominated_after = enemy.dominates(target)
-		if dominated_after and not dominated_before:
-			# Entering new enemy range - they attack
-			await enemy.attack(self)
-			if hp <= 0:
-				return
 
-	# Check if we can counter-attack (already adjacent, staying adjacent)
-	for enemy in Game.enemies:
-		if not is_instance_valid(enemy):
-			continue
-		var adj_before = HexGrid.distance(old_coord, enemy.coord) == 1
-		var adj_after = HexGrid.distance(target, enemy.coord) == 1
-		if adj_before and adj_after:
-			await attack(enemy)
+		# Does this enemy have the target tile in their threat zone?
+		var threat_tiles = enemy.get_threat_tiles()
+		if target in threat_tiles:
+			print(enemy.name, " owns tile ", target, " (in threat zone)")
+			enemies_that_own_tile.append(enemy)
 
-	# Move
+		# Is this enemy adjacent to the target tile?
+		var distance_to_tile = HexGrid.distance(enemy.coord, target)
+		if distance_to_tile == 1:
+			print(enemy.name, " is adjacent to tile ", target)
+			enemies_adjacent_to_tile.append(enemy)
+
+	# Player owns tiles adjacent to enemies (after moving there)
+	var player_owns_tile = enemies_adjacent_to_tile.size() > 0
+	var enemies_own_tile = enemies_that_own_tile.size() > 0
+
+	print("\nTile ownership:")
+	print("  - Player owns: ", player_owns_tile, " (", enemies_adjacent_to_tile.size(), " adjacent enemies)")
+	print("  - Enemies own: ", enemies_own_tile, " (", enemies_that_own_tile.size(), " enemies)")
+
+	# Move to the tile
 	coord = target
 	var tween = create_tween()
 	tween.tween_property(self, "position", HexGrid.to_world(target), 0.25)
 	await tween.finished
+
+	# COMBAT RESOLUTION based on tile ownership
+	if enemies_own_tile:
+		# Enemies own the tile - they attack
+		print("\n--- ENEMIES ATTACK (they own the tile) ---")
+		for enemy in enemies_that_own_tile:
+			if is_instance_valid(enemy):
+				print(enemy.name, " attacking player!")
+				await enemy.attack(self)
+				if hp <= 0:
+					print("Player died!")
+					return
+
+	if player_owns_tile:
+		# Player owns the tile - player attacks
+		print("\n--- PLAYER ATTACKS (player owns the tile) ---")
+		for enemy in enemies_adjacent_to_tile:
+			if is_instance_valid(enemy):
+				print("Player attacking ", enemy.name, "!")
+				await attack(enemy)
 
 func do_dash(target: Vector3i):
 	dash_mode = false

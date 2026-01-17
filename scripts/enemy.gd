@@ -52,36 +52,59 @@ func get_threat_tiles() -> Array[Vector3i]:
 	return HexGrid.neighbors(coord)
 
 func dominates(target_coord: Vector3i) -> bool:
-	return target_coord in get_threat_tiles()
+	var threat_tiles = get_threat_tiles()
+	var result = target_coord in threat_tiles
+	if result:
+		print(name, " dominates ", target_coord, " (has ", threat_tiles.size(), " threat tiles)")
+	return result
 
 func take_turn():
 	var player = Game.player
 	var dist = HexGrid.distance(coord, player.coord)
 
+	print(name, " taking turn. Distance to player: ", dist, ". Dominates player: ", dominates(player.coord))
+
 	if dominates(player.coord):
-		# Player in range - wait (Hoplite style)
-		pass
-	else:
-		# Move toward player
-		await move_toward_tile(player.coord)
+		# Player in range - wait (Hoplite style, don't move)
+		print(name, " is dominating player, not moving")
+		return
+
+	# Always try to move toward player if not dominating them
+	print(name, " moving toward player")
+	await move_toward_tile(player.coord)
 
 func move_toward_tile(target: Vector3i):
 	var best_tile = coord
 	var best_dist = HexGrid.distance(coord, target)
+	var walkable_neighbors = []
 
+	# Find the best neighbor that gets us closer, and track all walkable neighbors
 	for neighbor in HexGrid.neighbors(coord):
 		if Game.is_tile_blocked(neighbor):
 			continue
+		walkable_neighbors.append(neighbor)
 		var d = HexGrid.distance(neighbor, target)
 		if d < best_dist:
 			best_dist = d
 			best_tile = neighbor
 
+	# If we found a tile that gets us closer, use it
 	if best_tile != coord:
+		print(name, " moving from ", coord, " to ", best_tile, " (getting closer)")
 		coord = best_tile
 		var tween = create_tween()
 		tween.tween_property(self, "position", HexGrid.to_world(best_tile), 0.25)
 		await tween.finished
+	# Otherwise, if we have any walkable neighbors, pick one (to avoid getting stuck)
+	elif walkable_neighbors.size() > 0:
+		best_tile = walkable_neighbors[0]  # Just pick the first walkable tile
+		print(name, " moving from ", coord, " to ", best_tile, " (no closer tile, moving anyway)")
+		coord = best_tile
+		var tween = create_tween()
+		tween.tween_property(self, "position", HexGrid.to_world(best_tile), 0.25)
+		await tween.finished
+	else:
+		print(name, " could not find any walkable tile (completely surrounded)")
 
 func attack(target):
 	var dir = (target.position - position).normalized()
