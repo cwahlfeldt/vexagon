@@ -1,11 +1,12 @@
-[gd_scene load_steps=9 format=3 uid="uid://c3k8m5n7p2vu8"]
+[gd_scene load_steps=10 format=3 uid="uid://c3k8m5n7p2vu8"]
 
 [ext_resource type="Script" uid="uid://ccarjh2gsltft" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" uid="uid://c8dvnp5q6uo4m" path="res://scenes/hex_tile.tscn" id="2_hex_tile"]
 [ext_resource type="PackedScene" uid="uid://bkq5n8h7p2vu6" path="res://scenes/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" uid="uid://c2jrk5m8xtw7e" path="res://scenes/grunt.tscn" id="4_grunt"]
-[ext_resource type="PackedScene" uid="uid://d1fyh5m8yw2k9" path="res://scenes/wizard.tscn" id="5_wizard"]
+[ext_resource type="PackedScene" uid="uid://d1fyh5m8yw2la" path="res://scenes/wizard.tscn" id="5_wizard"]
 [ext_resource type="PackedScene" uid="uid://b8pjk7m3yt5e1" path="res://scenes/sniper.tscn" id="6_sniper"]
+[ext_resource type="PackedScene" uid="uid://gq10y0ecckqf" path="res://scenes/world.tscn" id="7_tipki"]
 [ext_resource type="PackedScene" uid="uid://d4lan7m2q5vu7" path="res://scenes/ui.tscn" id="7_ui"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_tefeu"]
@@ -18,8 +19,11 @@ grunt_scene = ExtResource("4_grunt")
 wizard_scene = ExtResource("5_wizard")
 sniper_scene = ExtResource("6_sniper")
 
+[node name="World" parent="." instance=ExtResource("7_tipki")]
+
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(0.49999997, -0.6123726, 0.6123726, 0, 0.70710695, 0.70710695, -0.86602545, -0.35355344, 0.35355344, 0, 10, 10)
+visible = false
 h_offset = 9.0
 v_offset = -3.0
 projection = 1
@@ -33,8 +37,9 @@ shadow_enabled = true
 
 [node name="Units" type="Node3D" parent="." groups=["units_container"]]
 
-[node name="UI" parent="." instance=ExtResource("7_ui")]
-
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 transform = Transform3D(-330.026, 0, 0, 0, 1, 0, 0, 0, -365.69235, 0, -2, 0)
+visible = false
 mesh = SubResource("PlaneMesh_tefeu")
+
+[node name="UI" parent="." instance=ExtResource("7_ui")]
