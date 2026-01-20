@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://h4syrg63qyjy" path="res://scripts/free_camera.gd" id="1_f3sb7"]
 [ext_resource type="PackedScene" uid="uid://dgc6luo823uhg" path="res://scenes/map.tscn" id="12_h8lre"]
-[ext_resource type="Shader" uid="uid://du31jwuiac01w" path="res://assets/radial_blur.gdshader" id="13_2o6r5"]
+[ext_resource type="Shader" path="res://assets/radial_blur.gdshader" id="13_2o6r5"]
 
 [sub_resource type="GDScript" id="GDScript_aqk2v"]
 resource_name = "world"
@@ -102,15 +102,17 @@ ui = NodePath("UI")
 
 [node name="FreeCamera" type="Camera3D" parent="." node_paths=PackedStringArray("radial_blur")]
 transform = Transform3D(0.70710677, -0.35355338, 0.6123724, 0, 0.8660254, 0.5, -0.70710677, -0.35355338, 0.6123724, 0, 9.18, 0)
-h_offset = 22.58
-v_offset = 13.03
+h_offset = 22.43
+v_offset = 12.43
 projection = 1
 current = true
 fov = 90.0
-size = 16.0
+size = 12.117
 near = 0.02
 script = ExtResource("1_f3sb7")
 radial_blur = NodePath("../RadialBlur")
+sway_amount = 0.25
+sway_smoothing = 7.0
 
 [node name="RadialBlur" type="ColorRect" parent="."]
 material = SubResource("ShaderMaterial_70uel")
@@ -119,6 +121,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = SubResource("GDScript_dwbse")
 
 [node name="UI" type="CanvasLayer" parent="."]
@@ -134,7 +137,7 @@ theme_type_variation = &"FlatButton"
 theme_override_styles/pressed = SubResource("StyleBoxFlat_h8lre")
 
 [node name="Panel" type="Panel" parent="UI"]
-anchors_preset = -1
+anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
@@ -147,7 +150,7 @@ grow_horizontal = 2
 grow_vertical = 0
 
 [node name="Samples" type="VBoxContainer" parent="UI" node_paths=PackedStringArray("samples_label", "radial_blur")]
-anchors_preset = -1
+anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
@@ -176,14 +179,12 @@ value = 32.0
 rounded = true
 
 [node name="Panel2" type="Panel" parent="UI"]
-anchors_preset = -1
 offset_left = 5.0
 offset_top = 5.0
 offset_right = 248.0
 offset_bottom = 491.0
 
 [node name="Help" type="VBoxContainer" parent="UI"]
-anchors_preset = -1
 offset_left = 10.0
 offset_top = 10.0
 offset_right = 243.0
@@ -262,7 +263,7 @@ text = "Slow Down: Alt"
 label_settings = SubResource("LabelSettings_70uel")
 
 [node name="FPS" type="Label" parent="."]
-anchors_preset = -1
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -73.0

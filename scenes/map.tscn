@@ -61,6 +61,7 @@ shadow_bias = 0.05
 directional_shadow_max_distance = 1000.0
 
 [node name="Floor" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.018014908, 1.9073486e-06, 0.034809113)
 mesh = SubResource("PlaneMesh_f3sb7")
 surface_material_override/0 = ExtResource("3_4t333")
 
@@ -100,12 +101,12 @@ mesh = SubResource("BoxMesh_k3n1d")
 surface_material_override/0 = ExtResource("2_gfy5m")
 
 [node name="Tiny8" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -36)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.9579735, 1, -58.19079)
 mesh = SubResource("BoxMesh_k3n1d")
 surface_material_override/0 = ExtResource("2_gfy5m")
 
 [node name="Tiny9" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -36)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5420713, 1, -39.47831)
 mesh = SubResource("BoxMesh_k3n1d")
 surface_material_override/0 = ExtResource("2_gfy5m")
 
@@ -155,7 +156,7 @@ mesh = SubResource("BoxMesh_lx1ux")
 surface_material_override/0 = ExtResource("2_gfy5m")
 
 [node name="Tiny19" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -32, 2, -47)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27.218277, 2, -47)
 mesh = SubResource("BoxMesh_lx1ux")
 surface_material_override/0 = ExtResource("2_gfy5m")
 
@@ -335,7 +336,7 @@ mesh = SubResource("BoxMesh_bxc27")
 surface_material_override/0 = ExtResource("2_g2t10")
 
 [node name="Small6" type="MeshInstance3D" parent="."]
-transform = Transform3D(0.495, 0, 0, 0, 0.495, 0, 0, 0, 0.495, -3.2094822, -1.8126774, -56.137886)
+transform = Transform3D(0.495, 0, 0, 0, 0.495, 0, 0, 0, 0.495, 6.4230804, -2.8126774, -54.442894)
 mesh = SubResource("BoxMesh_bxc27")
 surface_material_override/0 = ExtResource("2_g2t10")
 
@@ -525,7 +526,7 @@ mesh = SubResource("BoxMesh_g2t10")
 surface_material_override/0 = ExtResource("4_gfy5m")
 
 [node name="Big14" type="MeshInstance3D" parent="."]
-transform = Transform3D(0.03, 0, 0, 0, 0.03, 0, 0, 0, 0.03, -19.908186, 0.852705, -54.464237)
+transform = Transform3D(0.03, 0, 0, 0, 0.03, 0, 0, 0, 0.03, -19.908186, 0.852705, -53.703144)
 mesh = SubResource("BoxMesh_g2t10")
 surface_material_override/0 = ExtResource("4_gfy5m")
 
@@ -535,7 +536,7 @@ mesh = SubResource("BoxMesh_g2t10")
 surface_material_override/0 = ExtResource("4_gfy5m")
 
 [node name="Big18" type="MeshInstance3D" parent="."]
-transform = Transform3D(0.055, 0, 0, 0, 0.055, 0, 0, 0, 0.055, -8.343, 2, -29.287)
+transform = Transform3D(0.055, 0, 0, 0, 0.055, 0, 0, 0, 0.055, -8.343, 2, -25.243486)
 mesh = SubResource("BoxMesh_g2t10")
 surface_material_override/0 = ExtResource("4_gfy5m")
 

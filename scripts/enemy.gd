@@ -3,15 +3,17 @@ class_name Enemy
 
 @export var max_hp := 1
 @export var damage := 1
-@export var attack_range := 1  # For melee enemies
+@export var attack_range := 1 # For melee enemies
 
 var coord: Vector3i
 var hp: int
 var hover_area: Area3D
+@onready var animation_player = $AnimationPlayer
 
 func _ready():
 	add_to_group("enemies")
 	hp = max_hp
+	visible = false # Hidden until spawn animation plays
 	setup_hover_detection()
 
 func setup_hover_detection():
@@ -43,7 +45,7 @@ func highlight_threat_tiles(on: bool):
 		var tile = Game.get_tile(tile_coord)
 		if tile:
 			if on:
-				tile.set_highlight(true, Color(1.0, 0.3, 0.3, 0.5))  # Red highlight
+				tile.set_highlight(true, Color(1.0, 0.3, 0.3, 0.5)) # Red highlight
 			else:
 				tile.set_highlight(false)
 
@@ -64,6 +66,12 @@ func get_min_attack_range() -> int:
 
 func get_max_attack_range() -> int:
 	return 1
+
+func play_spawn_animation():
+	if (animation_player != null):
+		animation_player.stop()
+		animation_player.play("Enemy/Skeletons_Spawn_Ground")
+		visible = true
 
 func take_turn():
 	var player = Game.player
@@ -99,7 +107,7 @@ func find_and_move_to_best_position(player_coord: Vector3i):
 
 	# Score each candidate position
 	var best_tile = coord
-	var best_score = -INF
+	var best_score = - INF
 
 	var min_range = get_min_attack_range()
 	var max_range = get_max_attack_range()
@@ -127,9 +135,9 @@ func score_position(pos: Vector3i, player_coord: Vector3i, min_range: int, _max_
 		# MELEE AI (Grunt): Get as close as possible
 		# Strong preference for positions that threaten the player
 		if would_threaten:
-			return 1000.0 - dist  # Threaten + minimize distance
+			return 1000.0 - dist # Threaten + minimize distance
 		else:
-			return -dist  # Just minimize distance
+			return -dist # Just minimize distance
 	else:
 		# RANGED AI (Wizard/Sniper): Maintain optimal range (around 3)
 		# Strong preference for positions that threaten the player
@@ -137,11 +145,11 @@ func score_position(pos: Vector3i, player_coord: Vector3i, min_range: int, _max_
 		var dist_penalty = abs(dist - ideal_dist)
 
 		if would_threaten:
-			return 1000.0 - dist_penalty  # Threaten + stay at ideal range
+			return 1000.0 - dist_penalty # Threaten + stay at ideal range
 		elif dist < min_range:
-			return -500.0 + dist  # Too close, need to back away
+			return -500.0 + dist # Too close, need to back away
 		else:
-			return -dist_penalty  # Move toward ideal range
+			return -dist_penalty # Move toward ideal range
 
 func would_dominate_from(from_pos: Vector3i, target_coord: Vector3i) -> bool:
 	# Check if we would threaten target_coord if we were at from_pos
@@ -156,7 +164,7 @@ func move_to(target: Vector3i):
 	print(name, " moving from ", coord, " to ", target)
 	coord = target
 	var tween = create_tween()
-	tween.tween_property(self, "position", HexGrid.to_world(target), 0.25)
+	tween.tween_property(self, "position", HexGrid.to_world(target), 0.2)
 	await tween.finished
 
 func attack(target):

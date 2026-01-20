@@ -14,9 +14,19 @@ var dash_mode := false
 var block_cooldown := 0
 var block_active := false
 
+@onready var animation_player = $AnimationPlayer
+
 func _ready():
 	add_to_group("player")
 	hp = max_hp
+	visible = false # Hidden until spawn animation plays
+
+func play_spawn_animation():
+	visible = true
+	animation_player.play("Character/Spawn_Air")
+
+func player_idle_animation():
+	animation_player.play("Character/Idle")
 
 func start_turn():
 	if dash_cooldown > 0:
@@ -24,6 +34,7 @@ func start_turn():
 	if block_cooldown > 0:
 		block_cooldown -= 1
 	dash_mode = false
+
 	show_move_range()
 
 func _input(event):
@@ -87,7 +98,7 @@ func do_move(target: Vector3i):
 	# Execute movement animation
 	coord = target
 	var tween = create_tween()
-	tween.tween_property(self, "position", HexGrid.to_world(target), 0.25)
+	tween.tween_property(self, "position", HexGrid.to_world(target), 0.2)
 	await tween.finished
 
 	# PHASE 1: ENEMY REACTIVE ATTACKS
@@ -173,17 +184,17 @@ func take_damage(amount: int):
 		Game.trigger_defeat()
 
 func show_move_range():
-	hide_move_range()  # Clear any existing highlights first
+	hide_move_range() # Clear any existing highlights first
 
 	var range = 2 if dash_mode else move_range
-	var color = Color(0.3, 0.8, 1.0, 0.5) if dash_mode else Color(0.3, 1.0, 0.3, 0.5)  # Blue for dash, green for normal
+	var color = Color(0.3, 0.8, 1.0, 0.5) if dash_mode else Color(0.3, 1.0, 0.3, 0.5) # Blue for dash, green for normal
 
 	# Get all tiles in range
 	var tiles_in_range = HexGrid.in_range(coord, range)
 
 	for tile_coord in tiles_in_range:
 		if tile_coord == coord:
-			continue  # Skip player's current position
+			continue # Skip player's current position
 
 		var dist = HexGrid.distance(coord, tile_coord)
 		if dist > range:

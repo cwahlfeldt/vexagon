@@ -8,18 +8,19 @@ signal game_lost
 
 var player: Node3D
 var enemies: Array[Node3D] = []
-var tiles: Dictionary = {}  # Vector3i -> HexTile
+var tiles: Dictionary = {} # Vector3i -> HexTile
 
 var current_unit = null
 var is_player_turn := true
-var history: Array[Dictionary] = []  # For rewind
+var history: Array[Dictionary] = [] # For rewind
 
 # Game state
 var game_over := false
 var rewind_cooldown := 0
-const REWIND_COOLDOWN_TURNS := 0  # Set to 3 if you want rewind cooldown like old game
+const REWIND_COOLDOWN_TURNS := 0 # Set to 3 if you want rewind cooldown like old game
 
 func _ready():
+	randomize() # useful for initial random setup
 	pass
 
 func reset_state():
@@ -59,6 +60,8 @@ func start_player_turn():
 
 	player.start_turn()
 	turn_started.emit(player)
+	player.player_idle_animation()
+
 
 func end_player_turn():
 	if game_over:
@@ -164,7 +167,7 @@ func rewind():
 	# Reset game over state (allows rewinding from defeat)
 	game_over = false
 
-	history.pop_back()  # Remove current
+	history.pop_back() # Remove current
 	var state = history.back()
 
 	# Restore player

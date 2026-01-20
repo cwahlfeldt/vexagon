@@ -6,7 +6,7 @@ extends Node3D
 @export var wizard_scene: PackedScene
 @export var sniper_scene: PackedScene
 
-var level_config: Resource  # LevelConfig type
+var level_config: Resource # LevelConfig type
 
 func _ready():
 	# Get level config from autoload (will be available after project reload)
@@ -21,6 +21,7 @@ func setup_level():
 	clear_level()
 	generate_grid()
 	await spawn_units()
+	await play_spawn_animations()
 	Game.start_game()
 
 func clear_level():
@@ -61,7 +62,7 @@ func spawn_units():
 	player.hp = player_hp
 
 	# Collect spawnable tiles
-	await get_tree().process_frame  # Wait for tiles to be added to group
+	await get_tree().process_frame # Wait for tiles to be added to group
 	var spawnable = []
 	for tile in get_tree().get_nodes_in_group("tiles"):
 		if tile.walkable and HexGrid.distance(tile.coord, player.coord) >= min_spawn_dist:
@@ -117,7 +118,7 @@ func spawn_units():
 		if i < sniper_axes.size():
 			enemy.axis = sniper_axes[i]
 		else:
-			enemy.axis = i % 3  # Cycle through axes
+			enemy.axis = i % 3 # Cycle through axes
 		spawn_index += 1
 
 func advance_to_next_level():
@@ -130,3 +131,26 @@ func advance_to_next_level():
 
 func restart_current_level():
 	await setup_level()
+
+func play_spawn_animations():
+	# Get units directly from scene tree since Game.start_game() hasn't been called yet
+	var player = get_tree().get_first_node_in_group("player")
+	var enemies = get_tree().get_nodes_in_group("enemies")
+
+	print("Starting spawn animations. Player: ", player, " Enemies: ", enemies.size())
+
+	# Player spawns first
+	if player:
+		print("Spawning player...")
+		player.play_spawn_animation()
+		await get_tree().create_timer(0.5).timeout
+
+	# Enemies spawn staggered
+	var delay_between = 0.3
+	for i in enemies.size():
+		var enemy = enemies[i]
+		if is_instance_valid(enemy):
+			print("Waiting ", delay_between, "s before enemy ", i)
+			await get_tree().create_timer(delay_between).timeout
+			print("Spawning enemy ", i, ": ", enemy.name)
+			enemy.play_spawn_animation()

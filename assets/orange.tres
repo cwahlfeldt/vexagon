@@ -1,4 +1,4 @@
-[gd_resource type="StandardMaterial3D" format=3 uid="uid://cygfoqnnp8non"]
+[gd_resource type="StandardMaterial3D" load_steps=0 format=3 uid="uid://cygfoqnnp8non"]
 
 [ext_resource type="Texture2D" uid="uid://4qkbqu8mfjm3" path="res://assets/orange_texture.png" id="1_1nhxj"]
 
