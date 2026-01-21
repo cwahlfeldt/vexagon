@@ -17,6 +17,11 @@ config/icon="res://icon.png"
 
 [autoload]
 
+UnitRegistry="*res://scripts/systems/unit_registry.gd"
+TileRegistry="*res://scripts/systems/tile_registry.gd"
+RewindSystem="*res://scripts/systems/rewind_system.gd"
+TurnSystem="*res://scripts/systems/turn_system.gd"
+CombatSystem="*res://scripts/systems/combat_system.gd"
 Game="*res://scripts/game.gd"
 HexGrid="*res://scripts/hex_grid.gd"
 LevelManager="*res://scripts/level_manager.gd"

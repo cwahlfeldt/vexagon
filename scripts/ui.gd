@@ -61,12 +61,9 @@ func _process(_delta):
 	block_btn.text = block_text
 	block_btn.disabled = Game.game_over
 
-	# Rewind button - show cooldown if active
+	# Rewind button
 	var can_rewind = Game.can_rewind()
-	if Game.rewind_cooldown > 0:
-		rewind_btn.text = "REWIND (%d)" % Game.rewind_cooldown
-	else:
-		rewind_btn.text = "REWIND (R)"
+	rewind_btn.text = "REWIND (R)"
 	rewind_btn.disabled = not can_rewind or Game.game_over
 
 func _on_turn(_unit):

@@ -265,24 +265,24 @@ _surfaces = [{
 }]
 blend_shape_mode = 0
 
+[sub_resource type="AnimationNodeAdd2" id="AnimationNodeAdd2_qlg0r"]
+
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_tuyoq"]
 animation = &"Character/Idle_A"
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_qlg0r"]
 animation = &"Character/Spawn_Ground"
 
-[sub_resource type="AnimationNodeOneShot" id="AnimationNodeOneShot_qlg0r"]
-
 [sub_resource type="AnimationNodeBlendTree" id="AnimationNodeBlendTree_tuyoq"]
-graph_offset = Vector2(-112.44162, 164.64136)
+graph_offset = Vector2(-92.387985, 83.739876)
 nodes/output/position = Vector2(490, 150)
 nodes/Animation/node = SubResource("AnimationNodeAnimation_qlg0r")
 nodes/Animation/position = Vector2(0, 130)
 "nodes/Animation 2/node" = SubResource("AnimationNodeAnimation_tuyoq")
 "nodes/Animation 2/position" = Vector2(130, 340)
-nodes/OneShot/node = SubResource("AnimationNodeOneShot_qlg0r")
-nodes/OneShot/position = Vector2(370, 270)
-node_connections = [&"output", 0, &"OneShot", &"OneShot", 0, &"Animation", &"OneShot", 1, &"Animation 2"]
+nodes/Add2/node = SubResource("AnimationNodeAdd2_qlg0r")
+nodes/Add2/position = Vector2(340, 220)
+node_connections = [&"Add2", 0, &"Animation", &"Add2", 1, &"Animation 2"]
 
 [node name="Player" type="Node3D"]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
@@ -503,6 +503,4 @@ libraries = {
 root_node = NodePath("../Model")
 tree_root = SubResource("AnimationNodeBlendTree_tuyoq")
 anim_player = NodePath("../AnimationPlayer")
-parameters/OneShot/active = false
-parameters/OneShot/internal_active = false
-parameters/OneShot/request = 0
+parameters/Add2/add_amount = 0.0

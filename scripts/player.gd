@@ -80,21 +80,6 @@ func do_move(target: Vector3i):
 	var old_coord = coord
 	print("\n=== PLAYER MOVING FROM ", old_coord, " TO ", target, " ===")
 
-	# Track which MELEE enemies player was already adjacent to
-	# These enemies don't get reactive attacks (Hoplite rule)
-	var melee_enemies_already_adjacent = []
-
-	for enemy in Game.enemies:
-		if not is_instance_valid(enemy):
-			continue
-
-		# Check if enemy is melee (min attack range == 1 means melee)
-		var is_melee = enemy.get_min_attack_range() == 1
-
-		if is_melee and enemy.dominates(old_coord):
-			print(enemy.name, " was already adjacent (melee) - no reactive attack")
-			melee_enemies_already_adjacent.append(enemy)
-
 	# Execute movement animation
 	coord = target
 	var tween = create_tween()
@@ -102,36 +87,23 @@ func do_move(target: Vector3i):
 	await tween.finished
 
 	# PHASE 1: ENEMY REACTIVE ATTACKS
-	# Enemies attack when player enters/remains in their range
-	# Exception: Melee enemies player was already adjacent to don't get reactive attacks
+	# Use CombatSystem to determine which enemies react
 	print("\n--- ENEMY REACTIVE ATTACKS ---")
-	for enemy in Game.enemies:
-		if not is_instance_valid(enemy):
-			continue
-
-		# Skip melee enemies we were already adjacent to
-		if enemy in melee_enemies_already_adjacent:
-			continue
-
-		# Check if player is now in this enemy's threat range
-		if enemy.dominates(target):
-			print(enemy.name, " reactive attack (player entered/in threat zone)!")
-			await enemy.attack(self)
-			if hp <= 0:
-				print("Player died!")
-				return
+	var reactive_enemies = CombatSystem.get_reactive_enemies(old_coord, target)
+	for enemy in reactive_enemies:
+		print(enemy.name, " reactive attack (player entered/in threat zone)!")
+		await enemy.attack(self)
+		if hp <= 0:
+			print("Player died!")
+			return
 
 	# PHASE 2: PLAYER ATTACKS
 	# Player attacks ALL adjacent enemies after moving
 	print("\n--- PLAYER ATTACKS ---")
-	for enemy in Game.enemies:
-		if not is_instance_valid(enemy):
-			continue
-
-		# Attack any enemy adjacent to player's new position
-		if HexGrid.distance(target, enemy.coord) == 1:
-			print("Player attacks ", enemy.name, "!")
-			await attack(enemy)
+	var adjacent_enemies = CombatSystem.get_adjacent_enemies(target)
+	for enemy in adjacent_enemies:
+		print("Player attacks ", enemy.name, "!")
+		await attack(enemy)
 
 func do_dash(target: Vector3i):
 	var old_coord = coord
@@ -150,14 +122,10 @@ func do_dash(target: Vector3i):
 	# But player can attack enemies in range after landing
 
 	print("\n--- PLAYER ATTACKS AFTER DASH ---")
-	for enemy in Game.enemies:
-		if not is_instance_valid(enemy):
-			continue
-
-		# Attack all adjacent enemies after dash
-		if HexGrid.distance(target, enemy.coord) == 1:
-			print("Player attacks ", enemy.name, " after dash!")
-			await attack(enemy)
+	var adjacent_enemies = CombatSystem.get_adjacent_enemies(target)
+	for enemy in adjacent_enemies:
+		print("Player attacks ", enemy.name, " after dash!")
+		await attack(enemy)
 
 func attack(target):
 	# Lunge animation toward target and back
