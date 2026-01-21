@@ -2,6 +2,9 @@
 
 [ext_resource type="Script" path="res://scripts/wizard.gd" id="1_wizard"]
 [ext_resource type="PackedScene" path="res://assets/models/characters/Skeleton_Mage/Skeleton_Mage.glb" id="2_model"]
+[ext_resource type="AnimationLibrary" uid="uid://ccp41w2sxrumd" path="res://assets/models/animations/Character.res" id="3_wci2o"]
+[ext_resource type="AnimationLibrary" uid="uid://cynn3332r4gi8" path="res://assets/models/animations/Enemy.res" id="4_jkbns"]
+[ext_resource type="AnimationLibrary" uid="uid://4x2bd5fq0rpr" path="res://assets/models/animations/Movement.res" id="5_k6wos"]
 
 [node name="Wizard" type="Node3D"]
 script = ExtResource("1_wizard")
@@ -10,3 +13,12 @@ damage = 1
 
 [node name="Model" parent="." instance=ExtResource("2_model")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+root_node = NodePath("../Model")
+libraries = {
+&"Character": ExtResource("3_wci2o"),
+&"Enemy": ExtResource("4_jkbns"),
+&"Movement": ExtResource("5_k6wos")
+}
+autoplay = "Enemy/Skeletons_Spawn_Ground"

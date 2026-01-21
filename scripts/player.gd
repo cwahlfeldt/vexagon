@@ -26,7 +26,7 @@ func play_spawn_animation():
 	animation_player.play("Character/Spawn_Air")
 
 func player_idle_animation():
-	animation_player.play("Character/Idle")
+	animation_player.play("Character/Idle_A")
 
 func start_turn():
 	if dash_cooldown > 0:
