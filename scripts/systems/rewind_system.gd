@@ -1,12 +1,18 @@
 extends Node
 
 # State snapshots and restoration system
+# Saves game state at end of each turn for rewind functionality
+#
+# Enemies are never freed - just hidden when killed. This allows rewind to
+# restore them by simply making them visible again and restoring their state.
 
 signal state_saved
 signal state_rewound
 
 var history: Array[Dictionary] = []
 const MAX_HISTORY := 50
+var is_rewinding := false
+
 
 func save_state():
 	var player = UnitRegistry.player
@@ -19,16 +25,20 @@ func save_state():
 		"player_dash_cd": player.dash_cooldown,
 		"player_block_cd": player.block_cooldown,
 		"player_block_active": player.block_active,
-		"enemies": []
+		"enemies": {}
 	}
 
-	for e in UnitRegistry.enemies:
-		if is_instance_valid(e):
-			state.enemies.append({
-				"scene": e.scene_file_path,
-				"coord": e.coord,
-				"hp": e.hp
-			})
+	# Save ALL enemies that exist (including hidden/dead ones)
+	var units_parent = get_tree().get_first_node_in_group("units_container")
+	if units_parent:
+		for child in units_parent.get_children():
+			if child.is_in_group("enemies") and is_instance_valid(child):
+				state.enemies[child.get_instance_id()] = {
+					"ref": child,
+					"coord": child.coord,
+					"hp": child.hp,
+					"alive": child.visible  # Track if enemy was alive at this point
+				}
 
 	history.append(state)
 	if history.size() > MAX_HISTORY:
@@ -36,21 +46,27 @@ func save_state():
 
 	state_saved.emit()
 
+
 func can_rewind() -> bool:
-	return history.size() >= 2
+	return history.size() >= 2 and not is_rewinding
+
 
 func rewind():
 	if not can_rewind():
 		return
 
-	history.pop_back() # Remove current state
+	is_rewinding = true
+
+	# Remove current state to get previous state
+	history.pop_back()
 	var state = history.back()
 
 	var player = UnitRegistry.player
 	if not player:
+		is_rewinding = false
 		return
 
-	# Restore player
+	# Restore player state
 	player.coord = state.player_coord
 	player.hp = state.player_hp
 	player.dash_cooldown = state.player_dash_cd
@@ -59,35 +75,39 @@ func rewind():
 	player.position = HexGrid.to_world(state.player_coord)
 	player.dash_mode = false
 
-	# Clear enemies
-	for e in UnitRegistry.enemies:
-		if is_instance_valid(e):
-			e.queue_free()
+	# Clear current enemy registry - we'll rebuild it
 	UnitRegistry.enemies.clear()
 
-	# Wait for nodes to be freed
-	await get_tree().process_frame
-	await get_tree().process_frame
+	# Restore all enemies from saved state
+	for id in state.enemies:
+		var e_data = state.enemies[id]
+		var enemy = e_data.ref
 
-	# Respawn enemies
-	var units_parent = get_tree().get_first_node_in_group("units_container")
-	if not units_parent:
-		print("Error: units_container not found")
-		return
-
-	for e_data in state.enemies:
-		var scene = load(e_data.scene)
-		if not scene:
-			print("Error: Could not load enemy scene: ", e_data.scene)
+		if not is_instance_valid(enemy):
 			continue
-		var enemy = scene.instantiate()
-		units_parent.add_child(enemy)
+
+		# Restore position and HP
 		enemy.coord = e_data.coord
 		enemy.hp = e_data.hp
 		enemy.position = HexGrid.to_world(e_data.coord)
-		UnitRegistry.register_enemy(enemy)
+		enemy.scale = Vector3.ONE
 
+		if e_data.alive:
+			# Enemy was alive - make visible and re-enable
+			enemy.visible = true
+			enemy.set_process(true)
+			enemy.set_physics_process(true)
+			UnitRegistry.enemies.append(enemy)
+		else:
+			# Enemy was dead at this state - keep hidden
+			enemy.visible = false
+			enemy.set_process(false)
+			enemy.set_physics_process(false)
+
+	is_rewinding = false
 	state_rewound.emit()
+
 
 func reset():
 	history.clear()
+	is_rewinding = false

@@ -116,7 +116,10 @@ func get_enemy_at(coord: Vector3i) -> Node3D:
 func remove_enemy(enemy):
 	UnitRegistry.remove_enemy(enemy)
 	enemy_died.emit(enemy)
-	enemy.queue_free()
+	# Don't queue_free - just hide. Rewind needs to be able to revive enemies.
+	enemy.visible = false
+	enemy.set_process(false)
+	enemy.set_physics_process(false)
 
 # === REWIND DELEGATION ===
 func can_rewind() -> bool:

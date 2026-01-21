@@ -36,6 +36,7 @@ func generate_grid():
 	var board = $Board
 	var map_size = level_config.map_size if level_config else 5
 	var blocked_chance = level_config.blocked_tile_chance if level_config else 0.15
+	var player_start = Vector3i(0, map_size, -map_size)
 
 	for hex in HexGrid.in_range(Vector3i.ZERO, map_size):
 		var tile = tile_scene.instantiate()
@@ -43,8 +44,8 @@ func generate_grid():
 		tile.position = HexGrid.to_world(hex)
 		board.add_child(tile)
 
-		# Random blocked tiles (not at center)
-		if randf() < blocked_chance and hex != Vector3i.ZERO:
+		# Random blocked tiles (not at center or player start)
+		if randf() < blocked_chance and hex != Vector3i.ZERO and hex != player_start:
 			tile.walkable = false
 
 func spawn_units():

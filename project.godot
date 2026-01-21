@@ -31,6 +31,10 @@ LevelManager="*res://scripts/level_manager.gd"
 window/size/viewport_width=1920
 window/size/viewport_height=1080
 
+[dotnet]
+
+project/assembly_name="Vexagon"
+
 [input]
 
 dash={
