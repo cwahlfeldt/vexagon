@@ -79,16 +79,17 @@ func take_turn():
 		return
 
 	var dist = HexGrid.distance(coord, player.coord)
-	var player_in_threat = dominates(player.coord)
+	# Use CombatSystem to check if we can ACTUALLY attack (includes LoS check)
+	var can_attack_player = CombatSystem.can_enemy_attack(self, player.coord)
 
-	print(name, " taking turn. Distance to player: ", dist, ". In threat zone: ", player_in_threat)
+	print(name, " taking turn. Distance to player: ", dist, ". Can attack: ", can_attack_player)
 
 	# HOPLITE-STYLE AI: Enemies NEVER attack on their turn
 	# They only move to position themselves, or pass if player is in threat zone
 
-	if player_in_threat:
-		# Player already in threat zone - stay put and wait for player to move into us
-		print(name, " has player in threat zone, passing turn")
+	if can_attack_player:
+		# Player in threat zone with clear LoS - stay put and wait for player to move
+		print(name, " can attack player, passing turn")
 		return
 
 	# Need to move - find best position

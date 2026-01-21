@@ -14,11 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Running the Game
 
-This is a Godot 4.5 project. Open it in Godot Editor and press F5 to run, or use:
-```bash
-# If godot CLI is available
-godot --path /Users/chriswahlfeldt/code/vexagon
-```
+This is a Godot 4.5 project. Open it in Godot Editor and press F5 to run.
 
 There is no separate build system - Godot handles compilation internally.
 
@@ -26,25 +22,61 @@ There is no separate build system - Godot handles compilation internally.
 
 ### Autoload Singletons (Global State)
 
-Three autoload scripts manage core systems (configured in [project.godot:18-22](project.godot#L18-L22)):
+Eight autoload scripts manage core systems (configured in [project.godot:20-27](project.godot#L20-L27)):
 
-1. **Game** ([scripts/game.gd](scripts/game.gd)) - Central game controller
-   - Manages turn flow, player/enemy references, game state
-   - Handles rewind system via state snapshots
-   - Coordinates tile blocking and enemy lookups
+**Core Systems** (`scripts/systems/`):
+
+1. **UnitRegistry** ([unit_registry.gd](scripts/systems/unit_registry.gd)) - Unit tracking
+   - Central registry for player and enemies
+   - Key methods: `register_player()`, `register_enemy()`, `remove_enemy()`, `get_enemy_at()`, `get_valid_enemies()`
+
+2. **TileRegistry** ([tile_registry.gd](scripts/systems/tile_registry.gd)) - Tile tracking
+   - Central registry for hex tiles
+   - Key methods: `register_tile()`, `get_tile()`, `is_coord_blocked()`
+
+3. **RewindSystem** ([rewind_system.gd](scripts/systems/rewind_system.gd)) - State snapshots
+   - Manages game state history (max 50 states)
+   - Key methods: `save_state()`, `can_rewind()`, `rewind()`, `reset()`
+
+4. **TurnSystem** ([turn_system.gd](scripts/systems/turn_system.gd)) - Turn state machine
+   - Manages turn state and transitions
+   - Signals: `player_turn_started`, `player_turn_ended`, `enemy_turns_completed`
+   - Key methods: `start_player_turn()`, `end_player_turn()`, `process_enemy_turns()`
+
+5. **CombatSystem** ([combat_system.gd](scripts/systems/combat_system.gd)) - Damage resolution
+   - Hoplite-style reactive attack rules
+   - Key methods: `get_reactive_enemies()`, `get_adjacent_enemies()`, `get_enemies_threatening()`
+
+**Facade & Utilities**:
+
+6. **Game** ([scripts/game.gd](scripts/game.gd)) - Facade/coordinator
+   - Thin coordinator that delegates to systems
+   - Maintains backward compatibility via delegating properties
    - Victory/defeat detection and signals
-   - Key methods: `start_game()`, `end_player_turn()`, `rewind()`, `trigger_defeat()`, `check_victory()`
+   - Key methods: `start_game()`, `end_player_turn()`, `trigger_defeat()`, `check_victory()`
 
-2. **HexGrid** ([scripts/hex_grid.gd](scripts/hex_grid.gd)) - Hex math utilities
+7. **HexGrid** ([scripts/hex_grid.gd](scripts/hex_grid.gd)) - Hex math utilities
    - Converts hex coordinates (Vector3i) to world positions (Vector3)
    - Provides hex algorithms: `neighbors()`, `distance()`, `in_range()`, `line()`
    - Uses cube coordinates (x+y+z=0 invariant)
    - Hex size constant: `SIZE = 1.05`
 
-3. **LevelManager** ([scripts/level_manager.gd](scripts/level_manager.gd)) - Level progression
+8. **LevelManager** ([scripts/level_manager.gd](scripts/level_manager.gd)) - Level progression
    - Defines 8 levels with increasing difficulty
    - Manages current level index and progression
    - Key methods: `get_current_level()`, `advance_level()`, `reset_to_level()`
+
+### Communication Patterns
+
+| From | To | Method |
+|------|----|----|
+| Player | TurnSystem | Direct call: `end_player_turn()` |
+| Player | CombatSystem | Direct call: `get_reactive_enemies()`, `get_adjacent_enemies()` |
+| TurnSystem | RewindSystem | Direct call: `save_state()` |
+| Enemy | CombatSystem | Direct call for damage resolution |
+| UI | Game | Signals: `game_won`, `game_lost`, `turn_started` |
+
+**Rule**: Signals for events (turn changes, damage, death). Direct calls for queries and commands needing return values.
 
 ### Scene Structure
 
@@ -62,10 +94,10 @@ Main (Node3D)
 ### Core Gameplay Loop
 
 1. **Player Turn**: Player clicks tile → `player.try_move_to()` validates and executes move
-2. **Enemy Engagement**: When player enters enemy threat zone, enemy attacks immediately
-3. **Counter-attack**: If player stays adjacent to enemy during move, player counter-attacks
+2. **Enemy Engagement**: `CombatSystem.get_reactive_enemies()` determines which enemies attack
+3. **Counter-attack**: `CombatSystem.get_adjacent_enemies()` finds enemies to counter-attack
 4. **Enemy Turns**: After player action, `Game.do_enemy_turns()` moves each enemy toward player
-5. **State Save**: After enemy turns complete, `Game.save_state()` captures snapshot
+5. **State Save**: After enemy turns complete, `RewindSystem.save_state()` captures snapshot
 
 ### Enemy Threat System
 
@@ -90,14 +122,14 @@ The 8 levels progress from tutorial (2 grunts) to final challenge (mixed enemies
 
 ### Rewind Mechanics
 
-- State saved at end of each turn cycle in `Game.history` (max 50 states)
+- State saved at end of each turn cycle via `RewindSystem.save_state()` (max 50 states)
 - Stores: player position/stats, all enemy positions/HP, scene paths
 - On rewind: restores player state, despawns all enemies, re-instantiates enemies from saved scene paths
 - Requires "units_container" group on enemy parent node
 
 ### Input Actions
 
-Configured in [project.godot:33-48](project.godot#L33-L48):
+Configured in [project.godot:36-54](project.godot#L36-L54):
 - `dash` - D key
 - `block` - B key
 - `rewind` - R key
@@ -115,7 +147,7 @@ Uses cube coordinates (Vector3i) where x+y+z=0:
 Tiles are Area3D nodes that emit `input_event` signal. On left-click, calls `Game.player.try_move_to(coord)`.
 
 ### Movement Validation
-`Game.is_tile_blocked(coord)` checks:
+`TileRegistry.is_coord_blocked(coord)` checks:
 1. Tile exists and is walkable
 2. No player at that position
 3. No valid enemy at that position
@@ -128,20 +160,50 @@ Simple greedy pathfinding: each enemy moves to adjacent tile that minimizes dist
 
 ## File Organization
 
-- `scenes/` - All .tscn files (main, ui, hex_tile, player, enemies)
-- `scripts/` - All .gd files (paired with scenes, plus autoloads)
-  - `level_config.gd` - LevelConfig resource class
-  - `level_manager.gd` - Level progression autoload
-- `assets/` - Game assets
-- `.godot/` - Godot engine cache (auto-generated, don't modify)
+```
+scripts/
+├── game.gd              # Facade/coordinator
+├── player.gd            # Movement + abilities
+├── enemy.gd             # AI + threat system (base class)
+├── wizard.gd            # Enemy variant
+├── sniper.gd            # Enemy variant
+├── hex_grid.gd          # Hex math utilities
+├── hex_tile.gd          # Tile input handling
+├── level_manager.gd     # Level progression
+├── level_config.gd      # LevelConfig resource
+├── main.gd              # Level setup
+├── ui.gd                # UI layer
+├── free_camera.gd       # Camera controls
+└── systems/
+    ├── unit_registry.gd   # Unit tracking
+    ├── tile_registry.gd   # Tile tracking
+    ├── rewind_system.gd   # State snapshots
+    ├── turn_system.gd     # Turn state machine
+    └── combat_system.gd   # Damage resolution
+
+scenes/
+├── main.tscn            # Game entry point
+├── player.tscn          # Player prefab
+├── grunt.tscn           # Grunt enemy prefab
+├── wizard.tscn          # Wizard enemy prefab
+├── sniper.tscn          # Sniper enemy prefab
+├── hex_tile.tscn        # Hex tile prefab
+├── ui.tscn              # UI canvas layer
+├── world.tscn           # Free camera demo scene
+└── map.tscn             # Environment for world.tscn
+
+assets/                  # Game assets
+.godot/                  # Godot engine cache (auto-generated, don't modify)
+.old-game/               # Reference implementation (C# version, porting guides)
+```
 
 ## Important Gotchas
 
 1. **Units container group**: The parent node for enemies MUST be in the "units_container" group or rewind will fail
 2. **Enemy scene paths**: Enemies store `scene_file_path` for rewind - don't move enemy scenes without updating saved states
-3. **Turn blocking**: Player input is ignored when `Game.is_player_turn` is false
+3. **Turn blocking**: Player input is ignored when `TurnSystem.is_player_turn` is false
 4. **Instance validity**: Always check `is_instance_valid(enemy)` before accessing enemy references (they may be freed)
 5. **Dash mode persistence**: Dash mode is cleared at start of each turn and on rewind
 6. **Game state reset**: Call `Game.reset_state()` before setting up a new level to clear history and references
 7. **Dynamic unit spawning**: Units are spawned dynamically by main.gd based on LevelConfig - don't add units directly to the scene
-
+8. **System delegation**: Game.gd is a facade - actual logic lives in systems. Modify the appropriate system, not Game.gd

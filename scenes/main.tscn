@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://c2jrk5m8xtw7e" path="res://scenes/grunt.tscn" id="4_grunt"]
 [ext_resource type="PackedScene" uid="uid://d1fyh5m8yw2la" path="res://scenes/wizard.tscn" id="5_wizard"]
 [ext_resource type="PackedScene" uid="uid://b8pjk7m3yt5e1" path="res://scenes/sniper.tscn" id="6_sniper"]
-[ext_resource type="PackedScene" uid="uid://gq10y0ecckqf" path="res://scenes/world.tscn" id="7_tipki"]
+[ext_resource type="PackedScene" path="res://scenes/world.tscn" id="7_tipki"]
 [ext_resource type="PackedScene" uid="uid://d4lan7m2q5vu7" path="res://scenes/ui.tscn" id="7_ui"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_tefeu"]

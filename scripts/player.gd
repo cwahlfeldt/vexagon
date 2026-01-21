@@ -86,24 +86,40 @@ func do_move(target: Vector3i):
 	tween.tween_property(self, "position", HexGrid.to_world(target), 0.2)
 	await tween.finished
 
-	# PHASE 1: ENEMY REACTIVE ATTACKS
-	# Use CombatSystem to determine which enemies react
-	print("\n--- ENEMY REACTIVE ATTACKS ---")
-	var reactive_enemies = CombatSystem.get_reactive_enemies(old_coord, target)
-	for enemy in reactive_enemies:
-		print(enemy.name, " reactive attack (player entered/in threat zone)!")
+	# HOPLITE TURN ORDER:
+	# 1. Player attacks (stab + lunge) - happens FIRST after move
+	# 2. Enemy attacks - all enemies that can hit player's new position
+	# 3. Enemy movement - handled in do_enemy_turns()
+
+	# PHASE 1: PLAYER ATTACKS (Stab + Lunge)
+	print("\n--- PLAYER ATTACKS ---")
+
+	# Stab: enemies adjacent to BOTH old and new position
+	var stab_targets = CombatSystem.get_stab_targets(old_coord, target)
+	for enemy in stab_targets:
+		if is_instance_valid(enemy):
+			print("Player STABS ", enemy.name, "!")
+			await attack(enemy)
+
+	# Lunge: enemies we moved directly toward (now adjacent)
+	var lunge_targets = CombatSystem.get_lunge_targets(old_coord, target)
+	for enemy in lunge_targets:
+		if is_instance_valid(enemy) and enemy not in stab_targets:  # Don't double-hit
+			print("Player LUNGES at ", enemy.name, "!")
+			await attack(enemy)
+
+	# PHASE 2: ENEMY ATTACKS
+	# All enemies that can hit player's NEW position attack
+	print("\n--- ENEMY ATTACKS ---")
+	var attacking_enemies = CombatSystem.get_attacking_enemies(target)
+	for enemy in attacking_enemies:
+		if not is_instance_valid(enemy):
+			continue
+		print(enemy.name, " attacks player!")
 		await enemy.attack(self)
 		if hp <= 0:
 			print("Player died!")
 			return
-
-	# PHASE 2: PLAYER ATTACKS
-	# Player attacks ALL adjacent enemies after moving
-	print("\n--- PLAYER ATTACKS ---")
-	var adjacent_enemies = CombatSystem.get_adjacent_enemies(target)
-	for enemy in adjacent_enemies:
-		print("Player attacks ", enemy.name, "!")
-		await attack(enemy)
 
 func do_dash(target: Vector3i):
 	var old_coord = coord
@@ -118,14 +134,26 @@ func do_dash(target: Vector3i):
 	tween.tween_property(self, "position", HexGrid.to_world(target), 0.15)
 	await tween.finished
 
-	# DASH RULE: No enemy reactive attacks during dash!
-	# But player can attack enemies in range after landing
+	# DASH (Leap) in Hoplite:
+	# - Still triggers stab and lunge attacks
+	# - But enemies do NOT get reactive attacks (main benefit of dash)
 
+	# PHASE 1: PLAYER ATTACKS (Stab + Lunge) - same as normal move
 	print("\n--- PLAYER ATTACKS AFTER DASH ---")
-	var adjacent_enemies = CombatSystem.get_adjacent_enemies(target)
-	for enemy in adjacent_enemies:
-		print("Player attacks ", enemy.name, " after dash!")
-		await attack(enemy)
+
+	var stab_targets = CombatSystem.get_stab_targets(old_coord, target)
+	for enemy in stab_targets:
+		if is_instance_valid(enemy):
+			print("Player STABS ", enemy.name, " after dash!")
+			await attack(enemy)
+
+	var lunge_targets = CombatSystem.get_lunge_targets(old_coord, target)
+	for enemy in lunge_targets:
+		if is_instance_valid(enemy) and enemy not in stab_targets:
+			print("Player LUNGES at ", enemy.name, " after dash!")
+			await attack(enemy)
+
+	# NO PHASE 2: Enemies do NOT attack after dash - this is the main benefit!
 
 func attack(target):
 	# Lunge animation toward target and back

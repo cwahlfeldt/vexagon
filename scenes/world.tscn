@@ -1,8 +1,8 @@
-[gd_scene load_steps=11 format=3 uid="uid://gq10y0ecckqf"]
+[gd_scene load_steps=11 format=3 uid="uid://x0myw5o5x5lb"]
 
 [ext_resource type="Script" uid="uid://h4syrg63qyjy" path="res://scripts/free_camera.gd" id="1_f3sb7"]
 [ext_resource type="PackedScene" uid="uid://dgc6luo823uhg" path="res://scenes/map.tscn" id="12_h8lre"]
-[ext_resource type="Shader" path="res://assets/radial_blur.gdshader" id="13_2o6r5"]
+[ext_resource type="Shader" uid="uid://du31jwuiac01w" path="res://assets/radial_blur.gdshader" id="13_2o6r5"]
 
 [sub_resource type="GDScript" id="GDScript_aqk2v"]
 resource_name = "world"
@@ -137,7 +137,7 @@ theme_type_variation = &"FlatButton"
 theme_override_styles/pressed = SubResource("StyleBoxFlat_h8lre")
 
 [node name="Panel" type="Panel" parent="UI"]
-anchors_preset = 7
+anchors_preset = -1
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
@@ -150,7 +150,7 @@ grow_horizontal = 2
 grow_vertical = 0
 
 [node name="Samples" type="VBoxContainer" parent="UI" node_paths=PackedStringArray("samples_label", "radial_blur")]
-anchors_preset = 7
+anchors_preset = -1
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
@@ -179,12 +179,14 @@ value = 32.0
 rounded = true
 
 [node name="Panel2" type="Panel" parent="UI"]
+anchors_preset = -1
 offset_left = 5.0
 offset_top = 5.0
 offset_right = 248.0
 offset_bottom = 491.0
 
 [node name="Help" type="VBoxContainer" parent="UI"]
+anchors_preset = -1
 offset_left = 10.0
 offset_top = 10.0
 offset_right = 243.0
@@ -263,7 +265,7 @@ text = "Slow Down: Alt"
 label_settings = SubResource("LabelSettings_70uel")
 
 [node name="FPS" type="Label" parent="."]
-anchors_preset = 1
+anchors_preset = -1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -73.0
